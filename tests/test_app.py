@@ -13,6 +13,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+from contextlib import closing
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from unittest.mock import patch
@@ -247,7 +248,7 @@ class AppTests(unittest.TestCase):
         _,raw=self.request('/api/backup')
         with zipfile.ZipFile(io.BytesIO(raw)) as z:
             restored=Path(self.tmp.name)/'knowledge-backup.sqlite3';restored.write_bytes(z.read('data/library.sqlite3'))
-        with sqlite3.connect(restored) as c:
+        with closing(sqlite3.connect(restored)) as c:
             self.assertEqual(c.execute('SELECT count(*) FROM knowledge').fetchone()[0],2)
             self.assertEqual(c.execute('SELECT count(*) FROM knowledge_sources').fetchone()[0],3)
     def test_knowledge_validation_is_atomic(self):
@@ -324,7 +325,7 @@ class AppTests(unittest.TestCase):
         with zipfile.ZipFile(io.BytesIO(raw)) as z:
             self.assertIn('data/library.sqlite3',z.namelist());self.assertTrue(any(n.endswith('.pdf') for n in z.namelist()));self.assertFalse(any('.env' in n for n in z.namelist()))
             restored=Path(self.tmp.name)/'restore.sqlite3';restored.write_bytes(z.read('data/library.sqlite3'))
-        with sqlite3.connect(restored) as c:self.assertEqual(c.execute('SELECT content FROM notes').fetchone()[0],'检查证据强度')
+        with closing(sqlite3.connect(restored)) as c:self.assertEqual(c.execute('SELECT content FROM notes').fetchone()[0],'检查证据强度')
     def test_note_refs_persist_across_books_rename_restart_and_backup(self):
         a=self.paper('Book A');b=self.paper('Book B')
         refs=[{'number':2,'paper_id':a['id'],'page':2,'title':'Forged','locator':'wrong'},
@@ -343,7 +344,7 @@ class AppTests(unittest.TestCase):
         _,raw=self.request('/api/backup')
         with zipfile.ZipFile(io.BytesIO(raw)) as z:
             restored=Path(self.tmp.name)/'notes-backup.sqlite3';restored.write_bytes(z.read('data/library.sqlite3'))
-        with sqlite3.connect(restored) as c:
+        with closing(sqlite3.connect(restored)) as c:
             self.assertEqual(len(json.loads(c.execute('SELECT refs FROM notes WHERE id=?',(nid,)).fetchone()[0])),2)
     def test_note_refs_validation_and_manual_text_source(self):
         _,raw=self.request('/api/papers?filename=guide.txt','POST','文本规范。应记录具体条件与适用范围。'.encode());p=json.loads(raw)['paper']
@@ -419,7 +420,7 @@ class AppTests(unittest.TestCase):
         _,raw=self.request('/api/backup')
         with zipfile.ZipFile(io.BytesIO(raw)) as z:
             db=Path(self.tmp.name)/'web-backup.sqlite3';db.write_bytes(z.read('data/library.sqlite3'))
-        with sqlite3.connect(db) as c:
+        with closing(sqlite3.connect(db)) as c:
             self.assertEqual(c.execute('SELECT saved_card_id FROM web_cases').fetchone()[0],cid)
             self.assertEqual(json.loads(c.execute('SELECT web_sources FROM knowledge WHERE id=?',(cid,)).fetchone()[0])[0]['url'],item['url'])
     def test_web_snippet_scope_and_analysis_failures(self):
@@ -517,7 +518,7 @@ class AppTests(unittest.TestCase):
         _,raw=self.request('/api/backup')
         with zipfile.ZipFile(io.BytesIO(raw)) as archive:
             db=Path(self.tmp.name)/'restored.sqlite3';db.write_bytes(archive.read('data/library.sqlite3'))
-        with sqlite3.connect(db) as conn:self.assertEqual(conn.execute('SELECT COUNT(*) FROM web_literature').fetchone()[0],1)
+        with closing(sqlite3.connect(db)) as conn:self.assertEqual(conn.execute('SELECT COUNT(*) FROM web_literature').fetchone()[0],1)
 
     def test_literature_missing_abstract_and_invalid_analysis_are_not_saved(self):
         item=self.literature_result()['results'][0];path='/api/literature/'+item['id']
@@ -578,7 +579,7 @@ class AppTests(unittest.TestCase):
         with zipfile.ZipFile(io.BytesIO(raw)) as archive:
             database=Path(self.tmp.name)/'brief-backup.sqlite3'
             database.write_bytes(archive.read('data/library.sqlite3'))
-        with sqlite3.connect(database) as conn:
+        with closing(sqlite3.connect(database)) as conn:
             self.assertEqual(conn.execute('SELECT COUNT(*) FROM design_briefs').fetchone()[0],1)
 
     def test_brief_document_coverage_and_ocr_boundary(self):
@@ -784,7 +785,7 @@ class AppTests(unittest.TestCase):
         _,raw=self.request('/api/backup')
         with zipfile.ZipFile(io.BytesIO(raw)) as archive:
             db=Path(self.tmp.name)/'history-backup.sqlite3';db.write_bytes(archive.read('data/library.sqlite3'))
-        with sqlite3.connect(db) as conn:
+        with closing(sqlite3.connect(db)) as conn:
             self.assertEqual(conn.execute('SELECT count(*) FROM history_revisions WHERE record_id=?',(e['id'],)).fetchone()[0],2)
             self.assertEqual(conn.execute('SELECT count(*) FROM history_comparisons').fetchone()[0],1)
             self.assertEqual(conn.execute('PRAGMA integrity_check').fetchone()[0],'ok')

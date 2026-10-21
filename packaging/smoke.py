@@ -1,5 +1,6 @@
 """Run a packaged server in isolated storage and exercise its HTTP/plugin API."""
 import argparse
+import io
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,7 @@ import subprocess
 import tempfile
 import time
 import urllib.request
+import zipfile
 
 
 def main():
@@ -43,10 +45,12 @@ def main():
                 request('/api/plugins/architecture-history', {'enabled': False})
                 assert json.loads(request('/api/settings'))['research_mode'] == 'general'
                 assert json.loads(request('/api/updates'))['version']
+                with zipfile.ZipFile(io.BytesIO(request('/api/backup'))) as backup:
+                    assert backup.read('data/library.sqlite3').startswith(b'SQLite format 3')
                 request('/api/quit', {})
                 process.wait(timeout=10)
                 assert process.returncode == 0
-                print('Packaged server smoke check passed: startup, assets, isolated data, plugin activation, mode, shutdown.')
+                print('Packaged server smoke check passed: startup, assets, isolated data, plugin activation, mode, backup, shutdown.')
             finally:
                 if process.poll() is None:
                     process.terminate(); process.wait(timeout=10)

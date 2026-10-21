@@ -25,7 +25,7 @@ import urllib.request
 import webbrowser
 import zipfile
 from collections import Counter
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from html.parser import HTMLParser
@@ -786,15 +786,19 @@ def build_messages(ids, question, selection, research_mode=None):
 def backup_zip():
     with WRITE_LOCK, tempfile.TemporaryDirectory() as temp:
         snapshot = Path(temp) / 'library.sqlite3'
-        with connect() as source, sqlite3.connect(snapshot) as target:
+        # SQLite's transaction context does not close the file; Windows requires
+        # an explicit close before TemporaryDirectory can remove this snapshot.
+        with connect() as source, closing(sqlite3.connect(snapshot)) as target:
             source.backup(target)
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as archive:
             archive.write(snapshot, 'data/library.sqlite3')
             for path in sorted((DATA / 'papers').iterdir()):
                 archive.write(path, 'data/papers/' + path.name)
-            archive.writestr('恢复说明.txt', '关闭研读助手，将此压缩包中的 data 文件夹复制到程序目录。\n'
-                             '如果设置了 PAPER_DATA_DIR，请复制到该目录。恢复会替换同名资料，请先备份现有 data。\n'
+            archive.writestr('恢复说明.txt', '关闭研读助手，将 data 文件夹中的内容恢复到本机资料目录。\n'
+                             'Mac 默认：~/Library/Application Support/研读助手/data\n'
+                             'Windows 默认：%LOCALAPPDATA%/ResearchDesk/data\n'
+                             '如果设置了 PAPER_DATA_DIR，请恢复到该目录。恢复会替换同名资料，请先备份现有 data。\n'
                              '备份包括 PDF、笔记和问答记录，不包含 .env 或 API 密钥。\n')
         return buf.getvalue()
 
