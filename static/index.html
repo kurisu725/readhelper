@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light"><title>研读 · 文献、图书与规范的工作台</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/vendor/pdf_text_layer.css"><link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/knowledge.css">
+<link rel="stylesheet" href="/online_cases.css">
+<link rel="stylesheet" href="/briefs.css">
+<link rel="stylesheet" href="/literature.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" aria-label="研读首页" href="#library"><span class="brand-mark" data-icon="book"></span><span>研读<span class="brand-sub">RESEARCH DESK</span></span></a>
+    <div class="workspace-label">我的研究空间 <span class="local-badge">本地</span></div>
+    <nav class="main-nav" aria-label="主导航">
+      <button class="nav-item active" data-view="library" aria-label="资料库"><i data-icon="library"></i><span>资料库</span><b id="paperCount">0</b></button>
+      <button class="nav-item" data-view="compare" aria-label="跨文献分析"><i data-icon="layers"></i><span>跨文献分析</span></button>
+      <button class="nav-item" data-view="notes" aria-label="阅读笔记"><i data-icon="note"></i><span>阅读笔记</span><b id="noteCount">0</b></button>
+      <button class="nav-item" data-view="knowledge" aria-label="知识与案例"><i data-icon="book"></i><span>知识与案例</span><b id="knowledgeCount">0</b></button>
+      <button class="nav-item" data-view="webcases" aria-label="网络案例"><i data-icon="globe"></i><span>网络案例</span></button>
+      <button class="nav-item" data-view="literature" aria-label="网络文献"><i data-icon="globe"></i><span>网络文献</span></button>
+      <button class="nav-item" data-view="briefs" aria-label="任务书解读"><i data-icon="note"></i><span>任务书解读</span></button>
+      <button class="nav-item" data-view="extensions" aria-label="插件与更新"><i data-icon="settings"></i><span>插件与更新</span></button>
+    </nav>
+    <div class="side-divider"></div>
+    <div class="workspace-label">阅读进度</div>
+    <div class="status-nav">
+      <button data-status="unread"><span class="dot gray"></span><span>待读</span><b id="unreadCount">0</b></button>
+      <button data-status="reading"><span class="dot amber"></span><span>阅读中</span><b id="readingCount">0</b></button>
+      <button data-status="done"><span class="dot green"></span><span>已读</span><b id="doneCount">0</b></button>
+      <button data-status="archived"><i data-icon="archive"></i><span>归档</span><b id="archivedCount">0</b></button>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="privacy-note"><span class="privacy-icon" data-icon="shield"></span><div>让思考留在自己的空间<small>文献、笔记与问答记录本地保存</small></div></div>
+      <button class="nav-item" data-view="settings" aria-label="AI 设置"><i data-icon="settings"></i><span>AI 设置</span><span id="configDot" class="dot amber"></span></button>
+      <a class="nav-item" aria-label="备份资料" href="/api/backup" download><i data-icon="download"></i><span>备份资料</span></a>
+      <div class="user-line"><span class="avatar">研</span><div>个人工作台<small>专注阅读，连接思考</small></div><span class="online-dot"></span></div>
+    </div>
+  </aside>
+  <div class="main-shell">
+    <header class="topbar">
+      <div class="breadcrumb">工作空间 <span>/</span> <strong id="breadcrumb">资料库</strong></div>
+      <div class="top-actions"><label class="search-field"><i data-icon="search"></i><input id="globalSearch" placeholder="搜索标题、作者或全文…" autocomplete="off" aria-label="搜索文献"><kbd>⌘ K</kbd></label><button class="button primary small" id="topImport"><i data-icon="plus"></i>导入资料</button></div>
+    </header>
+    <main id="main">
+      <section id="view-library" class="view active">
+        <div class="page-heading"><div><div class="eyebrow">A SPACE FOR YOUR NEXT IDEA</div><h1>资料库<span class="heading-dot">.</span></h1><p>让每一次阅读，都成为下一次发现的起点。</p></div><span class="subtle-pill"><span class="dot green"></span>本机资料库</span></div>
+        <div class="welcome-panel" id="welcomePanel"><div><span class="kicker">阅读 · 提问 · 理解</span><h2>从一份资料，<br>开始新的理解。</h2><p>把原文、AI 分析和自己的思考放在一起。<br>每一个值得追问的细节，都能回到原文。</p><button class="button primary" id="heroImport"><i data-icon="plus"></i>导入第一份资料 <span>↗</span></button></div><div class="paper-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="art-spark">✧</div><div class="art-paper back"></div><div class="art-paper front"><div class="art-paper-label">RESEARCH NOTE <span>01</span></div><div class="art-title"></div><div class="art-title short"></div><div class="art-lines"></div><div class="art-highlight"></div><div class="art-lines bottom"></div><div class="art-foot">A question leads to a discovery.</div></div><div class="art-chip"><span>✦</span> 让好问题，连接新发现</div></div></div>
+        <div class="library-tools"><div class="tabs" id="libraryTabs"><button class="active" data-filter="all">全部资料 <span id="totalLabel">0</span></button><button data-filter="unread">待读</button><button data-filter="reading">阅读中</button><button data-filter="done">已读</button><button data-filter="archived">归档</button></div><div class="library-tool-right"><button class="button ghost small" id="compareSelected" disabled><i data-icon="layers"></i><span>分析所选</span></button><select id="categoryFilter" aria-label="资料分类"><option value="all">全部类型</option><option>文献</option><option>图书</option><option>规范</option><option>其他</option></select><select id="sortSelect" aria-label="文献排序"><option value="newest">最近导入</option><option value="title">标题排序</option><option value="year">年份排序</option></select></div></div>
+        <div id="libraryList"></div>
+        <div class="dropzone" id="dropzone"><span class="drop-icon" data-icon="upload"></span><div><strong id="dropTitle">拖入文献、图书或规范，开启阅读</strong><p>PDF / EPUB / DOCX / TXT / MD · 单个文件最大 100MB</p></div><button class="button outline small" id="dropImport">选择文件</button></div>
+        <div class="workflow-grid" id="workflowGrid"><article><span class="step-number">01</span><i data-icon="book"></i><h3>原文，随手可查</h3><p>逐页阅读，选中关键段落，把问题带给 AI。</p></article><article><span class="step-number">02</span><i data-icon="sparkles"></i><h3>分析，有据可循</h3><p>梳理研究方法、结论与局限，点击页码核对依据。</p></article><article><span class="step-number">03</span><i data-icon="layers"></i><h3>思考，逐渐连接</h3><p>对比多篇文献，把问答与笔记沉淀为研究记录。</p></article></div>
+        <div class="page-foot">把信息读成理解，把理解写成自己的思考。<span>研读 / RESEARCH DESK</span></div>
+      </section>
+      <section id="view-reader" class="view reader-view">
+        <div class="reader-heading"><button class="icon-button" id="backLibrary" title="返回资料库" aria-label="返回资料库"><i data-icon="arrowLeft"></i></button><div class="reader-title-wrap"><h2 id="readerTitle"></h2><p id="readerMeta"></p></div><button class="button outline small" id="readerLiterature"><i data-icon="globe"></i>相关文献</button><button class="button outline small" id="readerKnowledge"><i data-icon="book"></i>整理知识</button><select id="readerStatus" aria-label="阅读状态"><option value="unread">待读</option><option value="reading">阅读中</option><option value="done">已读</option><option value="archived">已归档</option></select><button class="icon-button" id="editPaper" title="编辑资料信息" aria-label="编辑资料信息"><i data-icon="edit"></i></button></div>
+        <div class="reading-workspace"><div class="document-panel"><div class="document-toolbar"><div class="segmented"><button id="pdfMode" class="active">原文</button><button id="textMode">文字</button></div><div class="page-controls"><button class="icon-button" id="prevPage" aria-label="上一页"><i data-icon="chevronLeft"></i></button><label><input id="pageInput" type="number" min="1" value="1" aria-label="页码"><span id="pageTotal">/ 1</span></label><button class="icon-button" id="nextPage" aria-label="下一页"><i data-icon="chevronRight"></i></button></div><div class="zoom-controls"><button class="icon-button" id="zoomOut" aria-label="缩小"><i data-icon="minus"></i></button><span id="zoomLabel">自适应</span><button class="icon-button" id="zoomIn" aria-label="放大"><i data-icon="plus"></i></button></div></div><div class="document-locator"><i data-icon="book"></i><select id="outlineSelect" aria-label="章节与位置"></select></div><div id="ocrPanel" class="ocr-panel" hidden><div class="ocr-heading"><div><strong>本机文字识别</strong><p id="ocrDescription">扫描件识别后可搜索、选段和提问。</p></div><div class="ocr-actions"><button id="ocrPage" class="button outline small">识别本页</button><button id="ocrAll" class="button primary small">识别全书</button><button id="ocrStop" class="button outline small" hidden>停止</button></div></div><progress id="ocrProgress" max="1" value="0" hidden aria-label="文字识别进度"></progress><div id="ocrStatus" role="status" aria-live="polite"></div></div><div id="pdfViewport" class="pdf-viewport"><div id="pdfPage" class="pdf-page"><canvas id="pdfCanvas"></canvas><div id="textLayer" class="textLayer"></div></div><pre id="plainText" hidden></pre><div id="pdfLoading" class="document-loading">正在载入原文…</div></div><div class="document-footer"><span id="extractHint">选中原文后，可引用到提问或笔记</span><a id="readerSource" target="_blank" rel="noopener noreferrer" hidden>文献原网址 ↗</a><a id="openOriginal" target="_blank" rel="noopener">打开 PDF ↗</a></div></div><div class="assistant-panel"><div class="assistant-tabs tabs"><button id="chatTab" class="active"><i data-icon="sparkles"></i>AI 阅读助手</button><button id="notesTab"><i data-icon="note"></i>阅读笔记 <span id="readerNoteCount">0</span></button></div><div id="readerChat" class="chat-workspace"></div><div id="readerNotes" class="reader-notes" hidden><div id="paperNoteList"></div><form id="noteForm"><label class="field-label" for="noteContent">记录你的思考</label><div id="noteQuote" class="quote-preview" hidden></div><textarea id="noteContent" placeholder="关键发现、疑问，或与你研究的联系…" rows="5" required></textarea><div class="form-row"><small id="notePageLabel"></small><button class="button primary small" type="submit"><i data-icon="plus"></i>保存笔记</button></div></form></div></div></div>
+      </section>
+      <section id="view-compare" class="view"><div class="page-heading"><div><div class="eyebrow">CONNECT THE DOTS</div><h1>跨文献分析<span class="heading-dot">.</span></h1><p>把不同研究放在一起，发现共识、分歧与新的问题。</p></div></div><div class="compare-layout"><div class="compare-picker card"><div class="card-heading"><h3>选择研究材料</h3><span class="muted">最多 6 篇</span></div><div id="comparePapers"></div><div class="compare-picker-foot">每篇文献分别检索相关摘录，再交给 AI 综合分析。</div></div><div class="compare-chat card" id="compareChat"></div></div></section>
+      <section id="view-notes" class="view"><div class="page-heading"><div><div class="eyebrow">THOUGHTS WORTH KEEPING</div><h1>阅读笔记<span class="heading-dot">.</span></h1><p>收藏证据，也留下自己的声音。</p></div><a href="/api/export" download class="button outline"><i data-icon="download"></i>导出 Markdown</a></div><div id="allNotes" class="notes-grid"></div></section>
+      <section id="view-extensions" class="view"></section>
+      <section id="view-settings" class="view settings-view"><div class="page-heading"><div><div class="eyebrow">YOUR TOOLS, YOUR CHOICE</div><h1>AI 设置<span class="heading-dot">.</span></h1><p>连接你的 AI 服务，让阅读有一个可以追问的伙伴。</p></div></div><div class="settings-grid"><form class="card settings-form" id="settingsForm"><div class="card-heading"><h3><i data-icon="sliders"></i>服务连接</h3><span id="keyBadge" class="badge amber">待配置</span></div><label class="field-label" for="baseUrl">API 基础地址</label><input id="baseUrl" type="url" required placeholder="https://api.openai.com/v1"><small id="baseHint">使用兼容 OpenAI Chat Completions 的接口。</small><label class="field-label" for="modelName">模型名称</label><div class="input-with-button"><input id="modelName" list="modelOptions" placeholder="输入服务商提供的模型名称" autocomplete="off"><button class="button outline small" id="fetchModels" type="button">获取模型</button></div><datalist id="modelOptions"></datalist><small id="modelHint">配置密钥后可获取可用模型，也可以直接填写。</small><div class="config-status" id="keyStatus"></div><div class="settings-actions"><span id="settingsFeedback" role="status"></span><button class="button primary" type="submit">保存设置<i data-icon="check"></i></button></div></form><div class="card key-guide"><div class="card-heading"><h3><i data-icon="key"></i>在本机填写密钥</h3></div><p>密钥只由本地服务读取，页面不会显示密钥内容。</p><h4>方式一 · .env 文件</h4><button class="button outline small" type="button" id="openConfigFile">打开密钥配置文件 ↗</button><p id="configFilePath" class="config-path"></p><p>在上方配置路径打开 <code>.env</code>，填写：</p><pre>PAPER_API_KEY=你的密钥</pre><p class="muted">保存后直接点「获取模型」，无需重启。桌面应用和命令行版均可使用上方按钮打开配置。</p><h4>方式二 · 环境变量</h4><pre>export PAPER_API_KEY='你的密钥'
+./启动研读助手.command</pre><p class="muted">也兼容 <code>OPENAI_API_KEY</code>。已有实例需先停止，再从此终端启动。</p><div class="data-notice"><i data-icon="info"></i><p>文献与笔记保存在本机。提问时，相关原文摘录和最近对话会发送到你配置的 AI 服务。扫描件可在阅读页面使用本机文字识别。</p></div></div></div></section>
+      <section id="view-knowledge" class="view"></section>
+      <section id="view-webcases" class="view"></section>
+      <section id="view-briefs" class="view"></section>
+      <section id="view-literature" class="view"></section>
+      <section id="view-search" class="view"><div class="page-heading"><div><div class="eyebrow">FIND THE EVIDENCE</div><h1>搜索结果<span class="heading-dot">.</span></h1><p id="searchSummary"></p></div></div><div id="searchResults"></div></section>
+    </main>
+  </div>
+</div>
+<input id="fileInput" type="file" accept=".pdf,.epub,.docx,.txt,.md" multiple hidden>
+<div id="toast" class="toast" role="status" hidden></div>
+<dialog id="editDialog"><form id="editForm"><div class="dialog-heading"><h2>资料信息</h2><button type="button" class="icon-button" id="closeEdit" aria-label="关闭"><i data-icon="x"></i></button></div><label class="field-label" for="editCategory">资料类型</label><select id="editCategory"><option>文献</option><option>图书</option><option>规范</option><option>其他</option></select><label class="field-label" for="editTitle">标题</label><input id="editTitle" required><label class="field-label" for="editAuthors">作者</label><input id="editAuthors"><div class="two-fields"><div><label class="field-label" for="editYear">发表年份</label><input id="editYear" placeholder="请按原文核对"></div><div><label class="field-label" for="editTags">标签</label><input id="editTags" placeholder="用逗号分隔"></div></div><p class="muted">标题、作者和年份优先从文件元数据提取，可能与正式出版信息不同，请核对后修改。规范建议在标签中记录标准编号与版本。</p><button class="button primary" type="submit">保存资料信息</button></form></dialog>
+</body>
+</html>

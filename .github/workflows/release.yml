@@ -1,0 +1,80 @@
+name: Build and release installers
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows-x64
+          - os: macos-15
+            target: macos-arm64
+          - os: macos-15-intel
+            target: macos-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -r requirements-build.txt
+      - name: Set update repository and validate tag
+        env:
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          RELEASE_REF_TYPE: ${{ github.ref_type }}
+          RELEASE_REF_NAME: ${{ github.ref_name }}
+        run: python packaging/prepare_release.py
+      - run: python -m unittest discover -s tests -v
+      - name: Build Windows installer
+        if: runner.os == 'Windows'
+        run: python packaging/build_windows.py
+      - name: Install Windows package and smoke test bundled runtime
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem release/ResearchDesk-*-windows-x64.exe | Select-Object -First 1
+          $install = Start-Process -FilePath $installer.FullName -ArgumentList '/S' -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw 'Installer failed' }
+          $appRoot = Join-Path $env:LOCALAPPDATA 'Programs/ResearchDesk'
+          python packaging/smoke.py "$appRoot/runtime/python.exe" "$appRoot/server/app.py"
+          if ($LASTEXITCODE -ne 0) { throw 'Packaged server check failed' }
+      - name: Build macOS installer
+        if: runner.os == 'macOS'
+        run: python packaging/build_macos.py
+      - name: Smoke test macOS bundled runtime
+        if: runner.os == 'macOS'
+        run: python packaging/smoke.py 'release/研读助手.app/Contents/Resources/server/ResearchDeskServer'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: |
+            release/*.exe
+            release/*.dmg
+          if-no-files-found: error
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+      - name: Generate checksums and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          cd release
+          sha256sum *.exe *.dmg > SHA256SUMS.txt
+          gh release create "$RELEASE_TAG" ./*.exe ./*.dmg SHA256SUMS.txt --verify-tag --title "研读助手 $RELEASE_TAG" --notes-file ../packaging/RELEASE_NOTES.md

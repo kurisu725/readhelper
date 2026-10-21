@@ -1,0 +1,10 @@
+{
+  "id": "architecture-history",
+  "name": "建筑史研究",
+  "version": "1.0.0",
+  "api_version": 1,
+  "description": "史料证据卡、建筑沿革时间轴、学术观点与争议对照，以及建筑史分析模式。停用后保留全部记录。",
+  "routes": ["/api/history"],
+  "modes": {"history": "建筑史研究"},
+  "frontend": "index.js"
+}
