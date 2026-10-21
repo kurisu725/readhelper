@@ -24,7 +24,7 @@ class ReleaseTests(unittest.TestCase):
         self.paths = patch.multiple(app, DATA=self.root / 'data', DB=self.root / 'data/library.sqlite3')
         self.paths.start()
         self.environment = patch.dict(os.environ, {'PAPER_CONFIG_FILE': str(self.root / '.env'),
-                                                   'PAPER_API_KEY': '', 'OPENAI_API_KEY': ''})
+                                                   'PAPER_API_KEY': '', 'OPENAI_API_KEY': '', 'PAPER_GITHUB_TOKEN': ''})
         self.environment.start()
         with updates.LOCK:
             updates.STATE.clear(); updates.STATE.update(status='idle', message='')
@@ -53,7 +53,8 @@ class ReleaseTests(unittest.TestCase):
     def fixture_release(self, content=b'installer', version='1.8.0'):
         name = f'ResearchDesk-{version}-windows-x64.exe'
         return {'tag_name': 'v' + version, 'draft': False, 'prerelease': False, 'body': '<script>not HTML</script>',
-                'assets': [{'name': name, 'size': len(content), 'digest': 'sha256:' + hashlib.sha256(content).hexdigest(),
+                'assets': [{'name': name, 'id': 1234, 'url': 'https://api.github.com/repos/owner/desk/releases/assets/1234',
+                            'size': len(content), 'digest': 'sha256:' + hashlib.sha256(content).hexdigest(),
                             'browser_download_url': 'https://github.com/owner/desk/releases/download/v' + version + '/' + name}]}
 
     def test_fresh_install_general_optional_plugin(self):
@@ -127,7 +128,9 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaises(ValueError): updates.version_tuple('v1.8.0-beta.1')
 
     def test_asset_integrity_and_origin_required(self):
-        for field, value in [('digest', None), ('browser_download_url', 'https://evil.invalid/file.exe'), ('size', updates.MAX_INSTALLER + 1)]:
+        for field, value in [('digest', None), ('browser_download_url', 'https://evil.invalid/file.exe'),
+                             ('size', updates.MAX_INSTALLER + 1), ('id', True),
+                             ('url', 'https://api.github.com/repos/other/repo/releases/assets/1234')]:
             data = self.fixture_release(); data['assets'][0][field] = value
             with self.assertRaises(ValueError): updates.select_release(data, 'owner/desk', platform_target='windows-x64.exe')
         with self.assertRaises(ValueError):
@@ -153,9 +156,51 @@ class ReleaseTests(unittest.TestCase):
 
     def test_github_errors_are_actionable(self):
         self.request('/api/updates/settings', {'repository': 'owner/desk'})
-        for status in (403, 404, 429):
-            with patch.object(updates.urllib.request, 'urlopen', side_effect=urllib.error.HTTPError('url', status, '', {}, None)):
+        for status in (401, 403, 404, 429):
+            with patch.object(updates.urllib.request, 'build_opener') as opener:
+                opener.return_value.open.side_effect = urllib.error.HTTPError('url', status, '', {}, None)
                 with self.assertRaises(ValueError): updates.check(app)
+
+    def test_private_release_auth_stays_out_of_local_api(self):
+        self.request('/api/updates/settings', {'repository': 'owner/desk'})
+        (self.root / '.env').write_text('PAPER_GITHUB_TOKEN=local-test-credential\n', encoding='utf-8')
+        code, settings = self.request('/api/updates')
+        self.assertEqual(code, 200)
+        self.assertTrue(settings['authenticated'])
+        self.assertNotIn('local-test-credential', json.dumps(settings))
+        with patch.object(updates.urllib.request, 'build_opener') as opener:
+            opener.return_value.open.return_value = io.BytesIO(json.dumps(self.fixture_release()).encode())
+            updates.check(app)
+            request = opener.return_value.open.call_args.args[0]
+        self.assertEqual(request.full_url, 'https://api.github.com/repos/owner/desk/releases/latest')
+        self.assertEqual(request.get_header('Authorization'), 'Bearer local-test-credential')
+
+    def test_private_download_uses_validated_asset_api(self):
+        release = updates.select_release(self.fixture_release(), 'owner/desk', platform_target='windows-x64.exe')
+        with patch.dict(os.environ, {'PAPER_GITHUB_TOKEN': 'local-test-credential'}), \
+             patch.object(updates, 'check', return_value=release), \
+             patch.object(updates.urllib.request, 'build_opener') as opener:
+            opener.return_value.open.return_value = io.BytesIO(b'installer')
+            updates.download_worker(app)
+            request = opener.return_value.open.call_args.args[0]
+        self.assertEqual(updates.snapshot()['status'], 'ready')
+        self.assertEqual(request.full_url, release['asset']['api_url'])
+        self.assertEqual(request.get_header('Accept'), 'application/octet-stream')
+        self.assertEqual(request.get_header('Authorization'), 'Bearer local-test-credential')
+
+    def test_redirects_never_forward_credential(self):
+        request = urllib.request.Request('https://api.github.com/repos/owner/desk/releases/assets/1234',
+                                         headers={'Authorization': 'Bearer local-test-credential'})
+        allowed = 'https://release-assets.githubusercontent.com/asset?signature=test'
+        redirected = updates.ReleaseRedirects().redirect_request(request, None, 302, '', {}, allowed)
+        self.assertEqual(redirected.full_url, allowed)
+        self.assertIsNone(redirected.get_header('Authorization'))
+        self.assertIsNone(updates.NoAPIRedirects().redirect_request(request, None, 302, '', {}, allowed))
+        for url in ('https://evil.invalid/file', 'https://secret@github.com/file', 'https://github.com:444/file'):
+            with self.assertRaises(ValueError):
+                updates.ReleaseRedirects().redirect_request(request, None, 302, '', {}, url)
+        with patch.dict(os.environ, {'PAPER_GITHUB_TOKEN': 'local-test-credential'}):
+            with self.assertRaises(ValueError): updates.github_request('https://evil.invalid/file', app)
 
 
 if __name__ == '__main__': unittest.main()

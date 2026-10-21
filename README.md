@@ -47,19 +47,19 @@ python app.py
 
 上传此项目目录中的源码，**包括 `.github/workflows/release.yml`**。不要上传个人资料根目录、`.env` 或任何数据库；`.gitignore` 已排除这些内容。安装文件应作为 Release 附件上传。
 
-仓库创建后，在项目目录执行（将仓库地址替换为自己的）：
+当前发布仓库为 `kurisu725/readhelper`，保持私有。在项目目录执行：
 
 ```sh
 git add .
 git commit -m "Prepare ResearchDesk 1.7.0 release"
-git remote add origin https://github.com/YOUR_ACCOUNT/researchdesk.git
+git remote add origin https://github.com/kurisu725/readhelper.git
 git push -u origin main
 git tag v1.7.0
 git push origin v1.7.0
 ```
 
 若从 ZIP 解压并且目录尚未初始化 Git，先执行 `git init -b main`。
-若已经存在提交，无需重复初始化或提交。仓库公开性和本项目开源许可证尚未替你选择；公开代码前请按你的意愿配置。
+若已经存在提交或远端，无需重复初始化、提交或添加远端。本项目开源许可证尚未选择；公开代码前请按你的意愿配置。
 
 推送 `v1.7.0` 标签后，工作流会：
 
@@ -74,7 +74,9 @@ git push origin v1.7.0
 
 应用内点击“插件与更新”，配置 `用户名/仓库名` 并“检查更新”。从 GitHub Actions 生成的安装包已自动绑定该仓库。更新流程：**检查版本 → 下载匹配系统的附件 → 校验 GitHub 提供的 SHA-256 → 打开安装包 → 退出旧程序后安装**。此版本不在后台静默替换程序，不自动拉取 Git 仓库覆盖本地源码。
 
-只支持公开仓库；不向客户端分发 GitHub Token。仓库不存在、没有正式 Release、限流、网络中断、文件损坏或缺少对应系统安装包时会提示原因。不会执行未校验的安装包。校验防止文件损坏和错误附件，不等同于操作系统开发者签名。
+公开仓库无需登录。私有仓库需要每位使用者在自己的本机 `.env` 中设置 `PAPER_GITHUB_TOKEN`：使用有该仓库访问权限的 GitHub 账号创建 fine-grained token，限定到 `kurisu725/readhelper`，仅授予 **Contents: Read-only**。可从“插件与更新 → 私有仓库访问配置”打开配置文件。令牌只发送到 GitHub API，不显示在页面中，不随安装包分发；下载重定向时会移除授权头。GitHub CLI 的发布授权与客户端的读取令牌分别配置。
+
+仓库不存在、没有正式 Release、限流、网络中断、文件损坏或缺少对应系统安装包时会提示原因。不会执行未校验的安装包。校验防止文件损坏和错误附件，不等同于操作系统开发者签名。
 
 ## 本地打包与测试
 
