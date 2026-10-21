@@ -16,7 +16,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='researchdesk-smoke-') as root:
         root = Path(root); ready = root / 'ready.txt'
         env = {**os.environ, 'PAPER_DATA_DIR': str(root / 'data'), 'PAPER_CONFIG_FILE': str(root / '.env'),
-               'PAPER_API_KEY': '', 'OPENAI_API_KEY': ''}
+               'PAPER_API_KEY': '', 'OPENAI_API_KEY': '', 'PYTHONUTF8': '1'}
         with (root / 'log.txt').open('w') as log:
             process = subprocess.Popen(args.command + ['--port', '0', '--no-browser', '--ready-file', str(ready)],
                                        env=env, stdout=log, stderr=log)
