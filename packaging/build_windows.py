@@ -61,10 +61,11 @@ def main():
             compiler = bundle / 'makensis'
             compiler.chmod(0o755)
             prefix = '-'
-        subprocess.run([str(compiler), prefix+'V3', prefix+'DVERSION='+version,
-                        prefix+'DPAYLOAD='+str(payload), prefix+'DOUTDIR='+str(output),
+        installer = output / f'ResearchDesk-{version}-windows-x64.exe'
+        subprocess.run([str(compiler), prefix+'V3', prefix+'INPUTCHARSET', 'UTF8', prefix+'DVERSION='+version,
+                        prefix+'DPAYLOAD_FILES='+str(payload / '*'), prefix+'DINSTALLER='+str(installer),
                         str(ROOT / 'packaging/windows.nsi')], check=True, env=env)
-        print(output / f'ResearchDesk-{version}-windows-x64.exe')
+        print(installer)
 
 
 if __name__ == '__main__': main()

@@ -51,17 +51,17 @@ python app.py
 
 ```sh
 git add .
-git commit -m "Prepare ResearchDesk 1.7.1 release"
+git commit -m "Prepare ResearchDesk 1.7.2 release"
 git remote add origin https://github.com/kurisu725/readhelper.git
 git push -u origin main
-git tag v1.7.1
-git push origin v1.7.1
+git tag v1.7.2
+git push origin v1.7.2
 ```
 
 若从 ZIP 解压并且目录尚未初始化 Git，先执行 `git init -b main`。
 若已经存在提交或远端，无需重复初始化、提交或添加远端。本项目开源许可证尚未选择；公开代码前请按你的意愿配置。
 
-推送 `v1.7.1` 标签后，工作流会：
+推送 `v1.7.2` 标签后，工作流会：
 
 1. 校验标签与 `release.json` 的版本一致，把当前 GitHub 仓库写入安装包的默认更新配置。
 2. 在 Windows、Mac Apple Silicon、Mac Intel 上分别测试和打包。

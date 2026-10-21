@@ -3,7 +3,7 @@ Unicode true
 !include "LogicLib.nsh"
 !include "x64.nsh"
 Name "研读助手"
-OutFile "${OUTDIR}/ResearchDesk-${VERSION}-windows-x64.exe"
+OutFile "${INSTALLER}"
 InstallDir "$LOCALAPPDATA\Programs\ResearchDesk"
 InstallDirRegKey HKCU "Software\ResearchDesk" "InstallDir"
 RequestExecutionLevel user
@@ -48,7 +48,7 @@ Section "研读助手" SEC_MAIN
   SetShellVarContext current
   !insertmacro CheckRunning
   SetOutPath "$INSTDIR"
-  File /r "${PAYLOAD}/*"
+  File /r "${PAYLOAD_FILES}"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   CreateDirectory "$SMPROGRAMS\研读助手"
   CreateShortCut "$SMPROGRAMS\研读助手\研读助手.lnk" "$INSTDIR\runtime\pythonw.exe" '"$INSTDIR\server\desktop_windows.pyw"'
