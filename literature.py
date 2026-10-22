@@ -47,13 +47,13 @@ def safe_url(value):
         return ''
 
 
-def crossref_search(query, year_from, year_to):
+def crossref_search(query, year_from, year_to, reader=None):
     params = {'query.bibliographic':query, 'rows':12, 'select':'DOI,title,author,published,container-title,type,abstract,URL'}
     filters = []
     if year_from: filters.append('from-pub-date:'+year_from+'-01-01')
     if year_to: filters.append('until-pub-date:'+year_to+'-12-31')
     if filters: params['filter'] = ','.join(filters)
-    _, text, _ = web.read_url('https://api.crossref.org/works?'+urllib.parse.urlencode(params))
+    _, text, _ = (reader or web.read_url)('https://api.crossref.org/works?'+urllib.parse.urlencode(params))
     records = []
     for item in json.loads(text)['message']['items']:
         parts = item.get('published', {}).get('date-parts', [[]])
@@ -65,10 +65,10 @@ def crossref_search(query, year_from, year_to):
     return records
 
 
-def semantic_search(query, year_from, year_to):
+def semantic_search(query, year_from, year_to, reader=None):
     params = {'query':query, 'limit':12, 'fields':'title,authors,year,venue,abstract,url,externalIds,openAccessPdf,publicationTypes'}
     if year_from or year_to: params['year'] = year_from+'-'+year_to
-    _, text, _ = web.read_url('https://api.semanticscholar.org/graph/v1/paper/search?'+urllib.parse.urlencode(params))
+    _, text, _ = (reader or web.read_url)('https://api.semanticscholar.org/graph/v1/paper/search?'+urllib.parse.urlencode(params))
     return [{'title':item.get('title',''), 'authors':[author.get('name','') for author in item.get('authors',[])],
              'year':str(item.get('year') or ''), 'venue':item.get('venue',''),
              'doi':(item.get('externalIds') or {}).get('DOI',''), 'url':item.get('url',''),

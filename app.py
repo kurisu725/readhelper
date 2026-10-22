@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import io
+import importlib.util
 import json
 import math
 import mimetypes
@@ -141,6 +142,8 @@ def init_db():
             conn.execute("ALTER TABLE pages ADD COLUMN label TEXT NOT NULL DEFAULT ''")
         if 'ocr_done' not in {r['name'] for r in conn.execute('PRAGMA table_info(pages)')}:
             conn.execute('ALTER TABLE pages ADD COLUMN ocr_done INTEGER NOT NULL DEFAULT 0')
+        if 'ocr_data' not in {r['name'] for r in conn.execute('PRAGMA table_info(pages)')}:
+            conn.execute("ALTER TABLE pages ADD COLUMN ocr_data TEXT NOT NULL DEFAULT '{}'")
         if 'refs' not in {r['name'] for r in conn.execute('PRAGMA table_info(notes)')}:
             conn.execute("ALTER TABLE notes ADD COLUMN refs TEXT NOT NULL DEFAULT '[]'")
             recover_note_refs(conn)
@@ -174,7 +177,8 @@ def public_config():
     return {**{k: v for k, v in config().items() if k != 'key'},
             'config_file': str(config_path()), 'native': bool(os.environ.get('PAPER_NATIVE')), 'version': release_updates.VERSION,
             'analysis_labels': {m: research.labels(m) for m in ['general', *[key for manifest, _, _ in plugin_manager.installed().values() for key in manifest.get('modes', {})]]},
-            'ocr_available': sys.platform == 'darwin' and (ROOT / 'ocr_macos').is_file()}
+            'ocr_available': bool(ocr_command()),
+            'ocr_engine': 'RapidOCR · CPU · 离线' if sys.platform == 'win32' else 'macOS Vision'}
 
 
 def validated_base(base):
@@ -337,18 +341,30 @@ def stop_ocr(paper_id=None):
                     process.terminate()
 
 
+def ocr_command():
+    if sys.platform == 'darwin' and (ROOT / 'ocr_macos').is_file():
+        return [str(ROOT / 'ocr_macos')]
+    if sys.platform == 'win32' and (ROOT / 'ocr_windows.py').is_file():
+        if all(importlib.util.find_spec(name) is not None for name in ('rapidocr', 'onnxruntime', 'pypdfium2')):
+            executable = Path(sys.executable)
+            if executable.name.lower() == 'pythonw.exe':
+                executable = executable.with_name('python.exe')
+            return [str(executable), '-u', str(ROOT / 'ocr_windows.py')]
+    return None
+
+
 def start_ocr(paper_id, body):
-    helper = ROOT / 'ocr_macos'
-    if sys.platform != 'darwin' or not helper.is_file():
-        raise AppError('本机 OCR 组件不可用，请使用更新后的 macOS 桌面版。', 409)
+    helper = ocr_command()
+    if not helper:
+        raise AppError('本机 OCR 组件不可用。Windows 源码版请安装 requirements.txt 中的依赖；安装版请更新完整安装包。', 409)
     with connect() as conn:
         paper = paper_row(paper_id, conn)
         if paper['format'] != 'pdf':
             raise AppError('OCR 用于 PDF 扫描页，当前资料已经是文本格式。')
         scope = body.get('scope', 'missing')
         if scope == 'page':
-            page = int(body.get('page', 1))
-            if not 1 <= page <= paper['page_count']:
+            page = body.get('page', 1)
+            if type(page) is not int or not 1 <= page <= paper['page_count']:
                 raise AppError('页码超出范围。')
             pages = [page]
         elif scope == 'missing':
@@ -377,9 +393,10 @@ def run_ocr(paper_id, pages, helper, job):
             if job['_cancel'].is_set():
                 job['status'] = 'cancelled'
                 return
-            process = subprocess.Popen([str(helper), str(DATA / 'papers' / (paper_id + '.pdf')),
+            process = subprocess.Popen([*helper, str(DATA / 'papers' / (paper_id + '.pdf')),
                                         ','.join(map(str, pages))], stdout=subprocess.PIPE,
-                                       stderr=subprocess.DEVNULL, text=True, encoding='utf-8')
+                                       stderr=subprocess.DEVNULL, text=True, encoding='utf-8',
+                                       creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0)
             job['_process'] = process
         # 每页超时单独计算，长书不会因为总时长超过限制而失败。
         def timeout():
@@ -395,6 +412,10 @@ def run_ocr(paper_id, pages, helper, job):
             if job['_cancel'].is_set():
                 break
             result = json.loads(line)
+            if result.get('fatal'):
+                with OCR_LOCK:
+                    job['error'] = str(result.get('error', 'OCR 无法启动。'))[:300]
+                break
             if result.get('done'):
                 continue
             page = result.get('page')
@@ -408,7 +429,8 @@ def run_ocr(paper_id, pages, helper, job):
                                             (paper_id, page)).fetchone()['text']
                     # 无结果时保留已有的少量文字，避免空白页识别覆盖有效信息。
                     text = text or previous
-                    conn.execute('UPDATE pages SET text=?,ocr_done=1 WHERE paper_id=? AND page=?', (text, paper_id, page))
+                    conn.execute('UPDATE pages SET text=?,ocr_done=1,ocr_data=? WHERE paper_id=? AND page=?',
+                                 (text, json.dumps(result.get('ocr_data', {}), ensure_ascii=False), paper_id, page))
                     conn.execute('DELETE FROM chunks WHERE paper_id=? AND page=?', (paper_id, page))
                     for position, chunk in enumerate(split_chunks(text)):
                         conn.execute('INSERT INTO chunks(paper_id,page,position,text) VALUES (?,?,?,?)',
@@ -1008,10 +1030,11 @@ class Handler(BaseHTTPRequestHandler):
                         return self.reply({'units': [dict(r) for r in rows]})
                     if method == 'GET' and action == 'page':
                         page = int(query.get('page', ['1'])[0])
-                        row = conn.execute('SELECT text,label,ocr_done FROM pages WHERE paper_id=? AND page=?', (pid, page)).fetchone()
+                        row = conn.execute('SELECT text,label,ocr_done,ocr_data FROM pages WHERE paper_id=? AND page=?', (pid, page)).fetchone()
                         if not row:
                             raise AppError('页码超出范围。')
-                        return self.reply({'page': page, 'text': row['text'], 'ocr_done': bool(row['ocr_done']), 'label': row['label'] or f'PDF第{page}页'})
+                        return self.reply({'page': page, 'text': row['text'], 'ocr_done': bool(row['ocr_done']),
+                                           'ocr_data': json.loads(row['ocr_data']), 'label': row['label'] or f'PDF第{page}页'})
                 if method == 'PATCH' and action is None:
                     body = self.body()
                     updates = {}
@@ -1203,6 +1226,7 @@ def main():
         pass
     finally:
         stop_ocr()
+        plugin_manager.shutdown(sys.modules[__name__])
         server.server_close()
         if args.ready_file:
             Path(args.ready_file).unlink(missing_ok=True)

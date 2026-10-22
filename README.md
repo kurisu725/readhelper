@@ -10,13 +10,28 @@
 - **macOS 14+、Apple Silicon**：打开 `ResearchDesk-版本-macos-arm64.dmg`，将“研读助手”拖到 Applications。
 - **macOS 14+、Intel**：使用 `ResearchDesk-版本-macos-x64.dmg`，由 GitHub Actions 的 Intel 构建任务生成。
 
-Mac 使用原生窗口，Windows 使用默认浏览器。资料服务只监听 `127.0.0.1`。Mac 支持 Vision OCR；Windows 暂不提供这项系统 OCR 功能。
+Mac 使用原生窗口，Windows 使用默认浏览器。资料服务只监听 `127.0.0.1`。Mac 使用 Vision OCR；Windows 使用 RapidOCR + ONNX Runtime CPU 离线识别中英文扫描 PDF，模型与 PDFium 渲染组件随安装包提供，无需显卡或联网下载模型。
 
 目前安装包未配置商业代码签名 / Apple Developer 公证。Mac 的签名是本地临时签名；系统可能要求手动允许打开。不要通过关闭全局系统保护来安装。
 
 首次运行进入“AI 设置”，点击“打开密钥配置文件”，填写 `PAPER_API_KEY` 后保存；在界面配置兼容 Chat Completions 的 API 地址和模型。密钥不会发送给更新服务，也不会显示在页面中。使用远程 AI 会将所选资料摘录发送到你配置的服务。
 
 在“插件与更新”启用建筑史研究。分析模式可选择“通用研读”或已启用插件提供的模式；已有分析保留原模式含义。
+
+## 扫描 PDF 与研究方向
+
+扫描 PDF 导入后，在阅读页点击“识别本页”或“识别全书”。全书识别跳过有文字和已经处理的页；进度和完成结果逐页保存，停止后可以继续。识别完成切换到“文字”视图即可复制、选段提问；全文搜索与 AI 引用会使用识别结果。原始 PDF 保持原样，OCR 不会向原文件写入隐藏文字层。复杂双栏、公式、表格仍需对照原图核对。
+
+Windows 源码版安装 `requirements.txt` 即包含 OCR 依赖。OCR 在独立、隐藏窗口的进程内执行，按页渲染并释放图片，不会把整本书同时载入模型；当前页超时会保留先前识别结果。文字块坐标、置信度与引擎名称随页面存储。
+
+在“插件与更新”启用“研究方向与导图”，侧栏出现“研究方向”，阅读页也可从当前论文或选段发起：
+
+1. 输入主题，可补充英文检索词、限制年份、选择来源及最多 8 / 16 / 24 篇。
+2. 从 OpenAlex、Semantic Scholar、Crossref 获取论文，可选 arXiv 预印本；默认使用配置的 AI 模型补充英文检索词，允许关闭。
+3. 依据检索摘要生成研究分支、相关问题与候选方向。导图区分“摘要明确报告”与“分析推断 / 待验证”，每个节点可展开原文证据，点击编号查看论文摘要及来源链接。
+4. 支持导图 / 大纲切换、折叠、取消任务、历史恢复以及 Markdown / JSON 导出。失败时保留已获取的题录和摘要，可复用结果重试分析；调整检索条件应新建任务。
+
+插件默认关闭。关闭后不接受新任务，会取消进行中的任务，保留历史数据和备份导出。已经发出的网络请求可能需要等待返回或超时。论文服务可能限流，界面会显示不完整的来源。研究分析仅使用摘要，不宣称已阅读全文或覆盖整个领域。请求使用“AI 设置”中的密钥、地址和模型，摘要分析会消耗该服务额度；文献来源不会收到 AI 密钥。
 
 ## 资料与配置
 
@@ -51,17 +66,17 @@ python app.py
 
 ```sh
 git add .
-git commit -m "Prepare ResearchDesk 1.7.2 release"
+git commit -m "Prepare ResearchDesk 1.7.3 release"
 git remote add origin https://github.com/kurisu725/readhelper.git
 git push -u origin main
-git tag v1.7.2
-git push origin v1.7.2
+git tag v1.7.3
+git push origin v1.7.3
 ```
 
 若从 ZIP 解压并且目录尚未初始化 Git，先执行 `git init -b main`。
 若已经存在提交或远端，无需重复初始化、提交或添加远端。本项目开源许可证尚未选择；公开代码前请按你的意愿配置。
 
-推送 `v1.7.2` 标签后，工作流会：
+推送 `v1.7.3` 标签后，工作流会：
 
 1. 校验标签与 `release.json` 的版本一致，把当前 GitHub 仓库写入安装包的默认更新配置。
 2. 在 Windows、Mac Apple Silicon、Mac Intel 上分别测试和打包。
@@ -97,4 +112,4 @@ Windows 安装包可在 Mac 上组装，**执行验证仍需 Windows**；工作�
 
 ## 第三方组件
 
-PDF 解析使用 pypdf，阅读器使用 PDF.js，Markdown 使用 marked。保留的第三方声明位于 `licenses/` 和 `static/vendor/`。打包时还会包含 Python 与 NSIS 的许可文本。原始个人文献、配置和数据库不属于发行内容。
+PDF 解析使用 pypdf，阅读器使用 PDF.js，Markdown 使用 marked。Windows OCR 使用 RapidOCR（含 PP-OCR 模型）、ONNX Runtime、PDFium / pypdfium2 及其依赖。保留的第三方声明位于 `licenses/` 和 `static/vendor/`；Windows OCR 依赖及模型许可保留在 `server/lib` 各包和 dist-info 中。打包时还会包含 Python 与 NSIS 的许可文本。原始个人文献、配置和数据库不属于发行内容。

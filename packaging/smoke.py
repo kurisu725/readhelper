@@ -37,7 +37,21 @@ def main():
                 state = json.loads(request('/api/state'))
                 assert state['config']['research_mode'] == 'general'
                 assert not state['config']['has_key']
+                if os.name == 'nt':
+                    assert state['config']['ocr_available']
+                    helper = Path(args.command[1]).parent / 'ocr_windows.py'
+                    checked = subprocess.run([args.command[0], str(helper), '--check'], capture_output=True,
+                                             text=True, encoding='utf-8', timeout=60,
+                                             creationflags=subprocess.CREATE_NO_WINDOW)
+                    assert checked.returncode == 0, checked.stdout
+                    assert json.loads(checked.stdout)['offline']
                 assert b'initExtensions' in request('/extensions.js')
+                plugins = json.loads(request('/api/plugins'))['plugins']
+                assert not next(plugin for plugin in plugins if plugin['id'] == 'research-directions')['enabled']
+                request('/api/plugins/research-directions', {'enabled': True})
+                assert b'directionForm' in request('/plugins/research-directions/index.js')
+                assert json.loads(request('/api/research-directions'))['runs'] == []
+                request('/api/plugins/research-directions', {'enabled': False})
                 request('/api/plugins/architecture-history', {'enabled': True})
                 assert b'initHistory' in request('/plugins/architecture-history/history.js')
                 assert json.loads(request('/api/history'))['records'] == []
@@ -50,7 +64,7 @@ def main():
                 request('/api/quit', {})
                 process.wait(timeout=10)
                 assert process.returncode == 0
-                print('Packaged server smoke check passed: startup, assets, isolated data, plugin activation, mode, backup, shutdown.')
+                print('Packaged server smoke check passed: startup, assets, isolated data, OCR, plugins, mode, backup, shutdown.')
             finally:
                 if process.poll() is None:
                     process.terminate(); process.wait(timeout=10)

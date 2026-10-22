@@ -43,9 +43,11 @@ def main():
         with zipfile.ZipFile(pyzip) as archive: archive.extractall(runtime)
         (runtime / 'python313._pth').write_text('python313.zip\n.\n../server\n../server/lib\nimport site\n')
         subprocess.run([sys.executable, '-m', 'pip', 'install', '--target', str(server / 'lib'), '--only-binary=:all:',
-                        '--no-compile', '--no-deps', 'pypdf==6.10.0', 'typing_extensions==4.16.0'], check=True)
+                        '--platform', 'win_amd64', '--python-version', '3.13', '--implementation', 'cp', '--abi', 'cp313',
+                        '--no-compile', 'pypdf==6.10.0', 'typing_extensions==4.16.0',
+                        '-r', str(ROOT / 'requirements-ocr.txt')], check=True)
         for name in ['app.py', 'knowledge.py', 'online_cases.py', 'briefs.py', 'literature.py', 'research.py',
-                     'plugin_manager.py', 'updates.py', 'release.json', '.env.example', 'desktop_windows.pyw']:
+                     'plugin_manager.py', 'updates.py', 'release.json', '.env.example', 'desktop_windows.pyw', 'ocr_windows.py']:
             shutil.copy2(ROOT / name, server / name)
         for name in ['static', 'plugins', 'licenses']:
             shutil.copytree(ROOT / name, server / name, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))

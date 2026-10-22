@@ -1,0 +1,65 @@
+#view-directions { --direction-green: #2b5546; --direction-line: #c1cec7; }
+.direction-layout { display: grid; grid-template-columns: 285px minmax(0, 1fr); gap: 22px; align-items: start; }
+.direction-sidebar, .direction-results { display: grid; gap: 18px; min-width: 0; }
+.direction-sidebar > *, .direction-results > *, #directionResult { min-width: 0; }
+.direction-form, .direction-history, .direction-progress, .direction-overview, .direction-sources { padding: 22px; }
+.direction-form h2, .direction-history h2, .direction-sources h2 { font-size: 17px; margin: 0 0 16px; }
+.direction-form > label, .direction-row label { display: block; font-size: 12px; font-weight: 600; margin: 15px 0 7px; }
+.direction-form input:not([type="checkbox"]), .direction-form textarea, .direction-form select { width: 100%; box-sizing: border-box; }
+.direction-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.direction-form fieldset { border: 1px solid #dce1db; border-radius: 8px; padding: 12px; margin: 17px 0; }
+.direction-form legend { font-size: 12px; padding: 0 5px; }
+.direction-checks { display: grid; gap: 9px; }
+.direction-checks label, .direction-form .direction-toggle { display: flex; align-items: center; gap: 8px; font-size: 12px; margin: 0; }
+.direction-form input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--direction-green); }
+.direction-form .muted, .direction-progress .muted { font-size: 12px; line-height: 1.7; margin: 12px 0; }
+.direction-form > button { width: 100%; justify-content: center; }
+.direction-history { max-height: 480px; overflow: auto; }
+.direction-history-item { width: 100%; padding: 12px 10px; border: 0; border-left: 3px solid transparent; background: transparent; text-align: left; cursor: pointer; }
+.direction-history-item.active { background: #edf3ee; border-left-color: var(--direction-green); }
+.direction-history-item strong { display: block; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.direction-history-item small { display: block; color: #718077; font-size: 11px; margin-top: 5px; }
+.direction-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.direction-actions a { text-decoration: none; }
+.direction-actions .button[aria-pressed="true"], .direction-actions .button[aria-pressed="true"]:hover { background: var(--direction-green); color: white; }
+.direction-warning { background: #faf3df; border-radius: 7px; padding: 9px 12px; color: #806527; font-size: 12px; }
+.direction-error { color: #a0443c; }
+.direction-placeholder { padding: 70px 24px; text-align: center; }
+.direction-placeholder > svg { width: 42px; height: 42px; fill: none; stroke: var(--direction-green); stroke-width: 1.3; }
+.direction-placeholder h2 { font-size: 21px; margin-top: 20px; }
+.direction-placeholder p { font-size: 13px; }
+.direction-overview h2 { margin: 12px 0; font-size: 23px; }
+.direction-overview > p { line-height: 1.9; font-size: 13px; white-space: pre-wrap; }
+.direction-overview .eyebrow { font-size: 10px; overflow-wrap: anywhere; }
+.direction-map { max-width: 100%; overflow: auto; background: #f5f7f3; border: 1px solid #dce3da; border-radius: 12px; padding: 24px; margin-top: 16px; }
+.direction-root { display: inline-block; max-width: 580px; background: var(--direction-green); color: white; border-radius: 9px; padding: 15px 22px; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.direction-branches { padding: 20px 0 0 28px; margin-left: 18px; border-left: 2px solid var(--direction-line); }
+.direction-branch { margin-bottom: 20px; min-width: 730px; position: relative; }
+.direction-branch::before { content: ''; position: absolute; left: -28px; width: 28px; top: 21px; border-top: 2px solid var(--direction-line); }
+.direction-branch > summary { cursor: pointer; padding: 12px 16px; background: #e4ede3; border: 1px solid #c8d6c7; border-radius: 8px; color: #294a36; font-weight: 600; font-size: 13px; }
+.direction-branch > summary small { margin-left: 16px; font-size: 10px; font-weight: 400; color: #627763; }
+.direction-branch-body { display: grid; grid-template-columns: 230px minmax(220px, 1fr) minmax(230px, 1fr); align-items: start; gap: 18px; padding: 18px 0 0; }
+.direction-node { background: white; border: 1px solid #dbe3d9; border-radius: 9px; padding: 16px; margin-bottom: 12px; overflow-wrap: anywhere; }
+.direction-node.problem { border-top: 3px solid #b79155; }
+.direction-node.suggestion { border-top: 3px solid #648d70; }
+.direction-kind { font-size: 10px; color: #718077; }
+.direction-node h4 { margin: 9px 0; font-size: 13px; line-height: 1.6; }
+.direction-node p { font-size: 12px; line-height: 1.85; white-space: pre-wrap; }
+.direction-node-group > h3 { margin: 0 0 10px; font-size: 11px; letter-spacing: 1px; color: #69796b; }
+.direction-evidence { margin-top: 12px; font-size: 11px; border-top: 1px solid #e6ebe3; padding-top: 9px; }
+.direction-evidence summary { cursor: pointer; color: #45634a; }
+.direction-evidence blockquote { margin: 10px 0 0; padding: 0 0 0 10px; border-left: 2px solid #c8d8c8; }
+.direction-evidence blockquote p { margin: 0 0 5px; font-size: 11px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.direction-source-link { border: 0; background: transparent; padding: 4px 0; font-size: 11px; color: #386948; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.direction-paper-links { display: flex; gap: 10px; flex-wrap: wrap; }
+.direction-paper { border-top: 1px solid #e0e6dc; padding: 15px 0; font-size: 12px; }
+.direction-paper summary { cursor: pointer; line-height: 1.7; }
+.direction-paper summary small { display: block; color: #74816f; font-size: 10px; margin-top: 4px; }
+.direction-paper p { line-height: 1.8; }
+.direction-abstract { white-space: pre-wrap; overflow-wrap: anywhere; background: #f5f7f2; padding: 14px; border-radius: 7px; }
+.direction-paper a { color: #386948; margin-right: 14px; }
+.direction-map.outline-view .direction-branch { min-width: 0; }
+.direction-map.outline-view .direction-branch-body { grid-template-columns: 1fr; gap: 8px; }
+.direction-map.outline-view .direction-node-group { border-left: 2px solid var(--direction-line); padding-left: 15px; }
+@media (max-width: 1120px) { .direction-layout { grid-template-columns: 245px minmax(0, 1fr); gap: 14px; } .direction-form { padding: 16px; } }
+@media (max-width: 800px) { .direction-layout { grid-template-columns: 1fr; } .direction-sidebar { grid-template-columns: 1fr; } .direction-history { max-height: 180px; } .direction-map { padding: 14px; } }

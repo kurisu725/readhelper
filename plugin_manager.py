@@ -57,8 +57,17 @@ def set_enabled(app, pid, value):
             installed()[pid][1].init_schema(conn)
         conn.execute('INSERT OR REPLACE INTO settings VALUES (?,?)', ('plugin:' + pid, 'true' if value else 'false'))
         if not value:
-            conn.execute("INSERT OR REPLACE INTO settings VALUES ('research_mode','general')")
+            selected = conn.execute("SELECT value FROM settings WHERE key='research_mode'").fetchone()
+            if selected and selected[0] in installed()[pid][0].get('modes', {}):
+                conn.execute("INSERT OR REPLACE INTO settings VALUES ('research_mode','general')")
+    if not value:
+        getattr(installed()[pid][1], 'on_disable', lambda application: None)(app)
     return descriptors(app)
+
+
+def shutdown(app):
+    for _, module, _ in installed().values():
+        getattr(module, 'shutdown', lambda application: None)(app)
 
 
 def provider(mode):

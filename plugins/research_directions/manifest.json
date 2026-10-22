@@ -1,0 +1,10 @@
+{
+  "id": "research-directions",
+  "name": "研究方向与导图",
+  "version": "1.0.0",
+  "api_version": 1,
+  "description": "检索相关论文，依据摘要梳理研究分支、已有问题与待验证方向，生成可展开、可核对出处的导图。停用保留历史结果。",
+  "routes": ["/api/research-directions"],
+  "modes": {},
+  "frontend": "index.js"
+}

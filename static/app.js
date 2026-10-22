@@ -163,10 +163,10 @@ async function renderPage(){
 }
 function renderOCR(){
  const p=paperById(S.reader),j=S.ocrJob,running=j?.status==='running';$('ocrPanel').hidden=!p||p.format!=='pdf';if(!p||p.format!=='pdf')return;
- $('ocrDescription').textContent=`${p.text_pages||0}/${p.page_count} 页有可用文字 · 中文 / 英文 · 本机处理`;
+ $('ocrDescription').textContent=`${p.text_pages||0}/${p.page_count} 页有可用文字 · 中文 / 英文 · ${S.config.ocr_engine||'本机处理'}`;
  $('ocrPage').disabled=running||!S.config.ocr_available;$('ocrAll').disabled=running||!S.config.ocr_available;$('ocrStop').hidden=!running;$('ocrProgress').hidden=!running;
  $('ocrProgress').max=Math.max(1,j?.total||1);$('ocrProgress').value=j?.completed||0;
- let text=S.config.ocr_available?'全书识别会跳过有文字和已处理的页；识别结果自动保存。':'本机 OCR 组件不可用，请重新打开更新后的桌面应用。';
+ let text=S.config.ocr_available?'全书识别会跳过有文字和已处理的页；识别结果自动保存。':'本机 OCR 组件不可用。Windows 源码版请安装 requirements.txt 的依赖；安装版请更新完整安装包。';
  if(running)text=`正在识别 PDF 第 ${j.current_page} 页 · 已处理 ${j.completed}/${j.total} 页。可继续阅读。`;
  else if(j?.status==='done')text=j.total?`已完成 ${j.completed} 页，${j.recognized} 页识别到文字${j.failed?'，'+j.failed+' 页失败，可用「识别本页」重试':''}。在「文字」视图可选段提问。`:'没有待识别页。若某页文字不正确，可切到该页点击「识别本页」重新识别。';
  else if(j?.status==='cancelled')text=`已停止，已处理 ${j.completed}/${j.total} 页。再次识别全书可继续。`;
